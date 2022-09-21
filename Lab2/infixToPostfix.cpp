@@ -1,7 +1,7 @@
 /*
- * Name:  Adam CLements
- * Date Submitted: 
- * Lab Section: 2121-001
+ * Name:  Adam Clements
+ * Date Submitted: 9/21/2022
+ * Lab Section: 2121-002
  * Assignment Name: Infix to Postfix Conversion
  */
 
@@ -34,6 +34,8 @@ using namespace std;
 //Any string in infix may be assumed to be an integer operand if none
 // of the above symbols
 
+//Function to return a "precedence value" for a given operator for simple comparison checks when popping the stack
+//(this will also check the precedence of parenthesis which I give a value of 0 by default so the operator is pushed)
 int precedence(std::string str){
 	if(str == "*" || str == "/" || str == "%"){
 		return 2;
@@ -46,31 +48,41 @@ int precedence(std::string str){
 	}
 }
 
-//reorder the infix expression as a properly formatted postfix expression, and return 
+//reorder the infix expression as a properly formatted postfix expression, and return the length of postfix
 int infixToPostfix(string infix[], int length, string postfix[]){
-	//variables used later (stack for operators, currentPos for filling postfix
+	//variables used later (stack for operators, currentPos for filling postfix)
 	stack<std::string> temp;
 	int currentPos = 0;
 	//iterate through the input expression
 	for(int i=0;i<length;i++){
-		//if the current char is a number, send it to output
+		//if the current char is a number, send it to postfix
 		if(infix[i] >= "0" && infix[i] <= "9"){
 			postfix[currentPos++] = infix[i];
 		}
-		//if the current char is a parenthesis, send it to the stack, and keep sending operators to the stack until it encounters ")"
+		//if the current char is a parenthesis, send it to the stack
 		else if(infix[i] == "("){
 			temp.push(infix[i]);
 		}
 		//if the program encounters a ")" unload the stack until it finds the previous "("
 		else if(infix[i] == ")"){
-			while(temp.top() != "("){
+			while(!temp.empty() && temp.top() != "("){
 				postfix[currentPos++] = temp.top();
 				temp.pop();
 			}
+			//if the code has full emptied the stack, not finding "(", return 0
+			if(temp.empty()){
+				return 0;
+			}
+			else{
+				//pop the "(" from the stack
+				temp.pop();
+			}
 		}
-		//if the current char is an operator, assign it a precedence value to make comparison easy ("*","/","%" = 2, "+","-" = 2), and check the operator stack
-		if(infix[i] == "*" || infix[i] == "/" || infix[i] == "%" || infix[i] == "+" || infix[i] == "-"){
-			//pop all of the operators from the stack that have a greater than or equal precedence value, unless a parenthetical is found in the stack in which case, push the current operator
+		//if the current char is an operator, assign it a precedence value to make comparison easy
+		//("*","/","%" = 2, "+","-" = 2), and check the operator stack
+		else if(infix[i] == "*" || infix[i] == "/" || infix[i] == "%" || infix[i] == "+" || infix[i] == "-"){
+			//pop all of the operators from the stack that have a greater than or equal precedence value,
+			//unless a parenthetical is found in the stack in which case, push the current operator
 			while(!temp.empty() && precedence(infix[i]) <= precedence(temp.top())){
 				postfix[currentPos++] = temp.top();
 				temp.pop();
@@ -78,41 +90,15 @@ int infixToPostfix(string infix[], int length, string postfix[]){
 			temp.push(infix[i]);
 		}
 	}
+	//empty the rest of the stack to postfix
 	while(!temp.empty()){
+		//if there is a remaining "(" then there was no matching ")" anywhere in the infix
+		if(temp.top() == "("){
+			return 0;
+		}
 		postfix[currentPos++] = temp.top();
 		temp.pop();
 	}
-	return currentPos-1;
-}
-
-//Main function to test infixToPostfix()
-//Should convert 2 + 3 * 4 + ( 5 - 6 + 7 ) * 8
-//            to 2 3 4 * + 5 6 - 7 + 8 * +
-int main()
-{
-    string infixExp[] = {"2", "+", "3", "*", "4", "+", "(",
-                         "5", "-", "6", "+", "7", ")", "*",
-                         "8"};
-    string postfixExp[15];
-    int postfixLength;
-
-    cout << "Infix expression: ";
-    for (int i=0; i<15; i++)
-    {
-        cout << infixExp[i] << " ";
-    }
-    cout << endl;
-    cout << "Length: 15" << endl << endl;
-
-    postfixLength = infixToPostfix(infixExp, 15, postfixExp);
-
-    cout << "Postfix expression: ";
-    for (int i=0; i<postfixLength; i++)
-    {
-        cout << postfixExp[i] << " ";
-    }
-    cout << endl;
-    cout << "Length: " << postfixLength << endl;
-    
-    return 0;
+	//return the new length of postfix
+	return currentPos;
 }
